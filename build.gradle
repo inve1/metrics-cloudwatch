@@ -2,15 +2,15 @@
 // Identifiers
 
 group = 'com.blacklocus'
-version = '0.4.1-SNAPSHOT'
+version = '0.4.2'
 ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Plugins
 
 apply plugin: 'java'
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 apply plugin: 'maven'
 apply plugin: 'signing'

@@ -27,12 +27,11 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Timer;
-import com.google.common.base.Preconditions;
+import com.google.common.base.*;
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Strings;
 
 import java.util.SortedMap;
+import java.util.function.Function;
 
 
 /**
@@ -60,6 +59,7 @@ public class CloudWatchReporterBuilder {
     private String typeDimValHistoStats;
     private String typeDimValTimerSamples;
     private String typeDimValTimerStats;
+    private Function<String, String> nameTransformer;
 
     private Predicate<MetricDatum> reporterFilter;
 
@@ -227,6 +227,10 @@ public class CloudWatchReporterBuilder {
         return this;
     }
 
+    public CloudWatchReporterBuilder withMetricNameTransformer(Function<String, String> transformer) {
+        this.nameTransformer = transformer;
+        return this;
+    }
 
     /**
      * @return a shallow copy of this builder
@@ -247,7 +251,8 @@ public class CloudWatchReporterBuilder {
                 .withTypeDimValHistoStats(typeDimValHistoStats)
                 .withTypeDimValTimerSamples(typeDimValTimerSamples)
                 .withTypeDimValTimerStats(typeDimValTimerStats)
-                .withReporterFilter(reporterFilter);
+                .withReporterFilter(reporterFilter)
+                .withMetricNameTransformer(nameTransformer);
     }
 
     /**
@@ -278,6 +283,8 @@ public class CloudWatchReporterBuilder {
 
         Predicate<MetricDatum> resolvedReporterFilter = null != reporterFilter ? reporterFilter : Predicates.<MetricDatum>alwaysTrue();
 
+        Function<String, String> resolvedNameTransformer = null != nameTransformer ? nameTransformer : Function.identity();
+
         return new CloudWatchReporter(
                 resolvedRegistry,
                 resolvedNamespace,
@@ -293,6 +300,7 @@ public class CloudWatchReporterBuilder {
                 .withTypeDimValHistoStats(resolvedTypeDimValHistoStats)
                 .withTypeDimValTimerSamples(resolvedTypeDimValTimerSamples)
                 .withTypeDimValTimerStats(resolvedTypeDimValTimerStats)
-                .withReporterFilter(resolvedReporterFilter);
+                .withReporterFilter(resolvedReporterFilter)
+                .withMetricNameTransformer(resolvedNameTransformer);
     }
 }

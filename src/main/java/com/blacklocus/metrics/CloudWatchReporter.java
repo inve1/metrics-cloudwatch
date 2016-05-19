@@ -43,15 +43,10 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * New users should obtain a reporter via a {@link CloudWatchReporterBuilder}! The reporter constructors remain
@@ -204,6 +199,8 @@ public class CloudWatchReporter extends ScheduledReporter {
      * particular filter.
      */
     private Predicate<MetricDatum> reporterFilter = Predicates.alwaysTrue();
+
+    private java.util.function.Function<String, String> nameTransformer;
 
     // These defaults are deprecated but are maintained for backwards compatibility.
     // The CloudWatchReporterBuilder, introduced later, uses the new defaults which
@@ -409,8 +406,29 @@ public class CloudWatchReporter extends ScheduledReporter {
         return this;
     }
 
+    public CloudWatchReporter withMetricNameTransformer(java.util.function.Function<String, String> transformer) {
+        this.nameTransformer = transformer;
+        return this;
+    }
+
+    private <T> SortedMap<String, T> mapNames(SortedMap<String, T> original) {
+        return original.entrySet().stream().collect(Collectors.toMap(e -> nameTransformer.apply(e.getKey()), Map.Entry::getValue,
+                (k,v) ->{ throw new RuntimeException(String.format("Duplicate key %s", k));},
+                TreeMap::new));
+    }
     @Override
     public void report(SortedMap<String, Gauge> gauges,
+                       SortedMap<String, Counter> counters,
+                       SortedMap<String, Histogram> histograms,
+                       SortedMap<String, Meter> meters,
+                       SortedMap<String, Timer> timers) {
+
+        realReport(mapNames(gauges), mapNames(counters), mapNames(histograms), mapNames(meters), mapNames(timers));
+
+    }
+
+
+    public void realReport(SortedMap<String, Gauge> gauges,
                        SortedMap<String, Counter> counters,
                        SortedMap<String, Histogram> histograms,
                        SortedMap<String, Meter> meters,
